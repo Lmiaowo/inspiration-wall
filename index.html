@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>靈感卡片牆</title>
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <!-- 背景光斑 -->
+  <div class="bg-orbs" aria-hidden="true">
+    <span class="orb orb1"></span>
+    <span class="orb orb2"></span>
+    <span class="orb orb3"></span>
+  </div>
+
+  <!-- 頂部欄 -->
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-mark">✦</span>
+      <span class="brand-name">靈感卡片牆</span>
+    </div>
+
+    <div class="search-wrap">
+      <span class="search-icon">🔍</span>
+      <input id="searchInput" class="search-input" type="text" placeholder="搜尋標題 / 正文 / 來源 / 標籤…" autocomplete="off" />
+    </div>
+
+    <div class="tag-filter" id="tagFilter" title="按標籤篩選"></div>
+
+    <div class="view-switch" id="viewSwitch" title="切換視圖">
+      <button class="view-btn active" data-view="belt" title="單行傳送帶">🎞️</button>
+      <button class="view-btn" data-view="falls" title="多行瀑布">🌊</button>
+      <button class="view-btn" data-view="grid" title="靜態網格">🔲</button>
+    </div>
+    <button class="btn icon" id="orientBtn" title="橫向 / 豎向切換">↔</button>
+
+    <div class="actions">
+      <button class="btn primary" id="newBtn"><span>＋</span> 新建</button>
+      <button class="btn icon" id="menuBtn" title="選單">⚙</button>
+    </div>
+  </header>
+
+  <!-- 選單下拉 -->
+  <div class="menu-pop hidden" id="menuPop">
+    <button class="menu-item" id="exportBtn">⬇ 匯出 JSON</button>
+    <button class="menu-item" id="importBtn">⬆ 匯入 JSON</button>
+    <button class="menu-item" id="settingsBtn">⚙ 設定</button>
+    <label class="menu-item file-label">⬆ 從檔案匯入
+      <input type="file" id="importFile" accept="application/json" hidden />
+    </label>
+  </div>
+
+  <!-- 主區域 -->
+  <main class="stage">
+    <!-- 單行傳送帶 -->
+    <section class="view view-belt active" id="viewBelt">
+      <div class="belt-stage" id="beltStage"></div>
+      <div class="edge-hint" id="beltHint">懸停靜止閱讀 · 其餘卡片浮動 · 未滿自動置中</div>
+    </section>
+
+    <!-- 多行瀑布 -->
+    <section class="view view-falls" id="viewFalls">
+      <div class="falls-stage" id="fallsStage"></div>
+    </section>
+
+    <!-- 靜態網格 -->
+    <section class="view view-grid" id="viewGrid">
+      <div class="grid-wrap" id="gridWrap"></div>
+    </section>
+
+    <!-- 空狀態 -->
+    <div class="empty hidden" id="emptyState">
+      <div class="empty-emoji">🌱</div>
+      <p>還沒有靈感，記下第一個吧</p>
+      <button class="btn primary" id="emptyNewBtn">＋ 新建卡片</button>
+    </div>
+  </main>
+
+  <!-- 卡片編輯/新建模態 -->
+  <div class="modal-mask hidden" id="cardModal">
+    <div class="modal" role="dialog" aria-modal="true">
+      <div class="modal-head">
+        <h2 id="modalTitle">新建靈感</h2>
+        <button class="btn icon" id="modalClose">✕</button>
+      </div>
+      <div class="modal-body">
+        <label class="field">
+          <span class="field-label">標題</span>
+          <input id="fTitle" type="text" placeholder="給靈感起個名字" />
+        </label>
+        <label class="field">
+          <span class="field-label">正文</span>
+          <textarea id="fBody" rows="5" placeholder="寫下完整內容…"></textarea>
+        </label>
+        <div class="field-row">
+          <label class="field">
+            <span class="field-label">來源</span>
+            <input id="fSource" type="text" placeholder="書名 / 作者 / 網址（可選）" />
+          </label>
+          <label class="field">
+            <span class="field-label">建立時間</span>
+            <input id="fTime" type="datetime-local" />
+          </label>
+        </div>
+        <label class="field">
+          <span class="field-label">標籤 <em>Enter 或逗號新增</em></span>
+          <input id="fTagInput" type="text" placeholder="如：金句、靈感、讀書" />
+          <div class="tag-chips" id="tagChips"></div>
+        </label>
+
+        <div class="field">
+          <span class="field-label">背景配色</span>
+          <div class="bg-controls">
+            <label class="seg">
+              <input type="radio" name="bgType" value="gradient" checked />
+              <span>漸層</span>
+            </label>
+            <label class="seg">
+              <input type="radio" name="bgType" value="solid" />
+              <span>純色</span>
+            </label>
+            <label class="checkbox-inline">
+              <input type="checkbox" id="fUseGlobal" />
+              <span>跟隨全域預設</span>
+            </label>
+          </div>
+          <div class="bg-pickers" id="bgPickers">
+            <label class="color-field"><span>顏色 1</span><input type="color" id="fC1" value="#cc785c" /></label>
+            <label class="color-field" id="c2Wrap"><span>顏色 2</span><input type="color" id="fC2" value="#5db8a6" /></label>
+            <label class="angle-field" id="angleWrap"><span>角度 <b id="angleVal">135</b>°</span><input type="range" id="fAngle" min="0" max="360" value="135" /></label>
+          </div>
+          <div class="presets" id="presets"></div>
+          <div class="preview-card" id="bgPreview">預覽</div>
+        </div>
+      </div>
+      <div class="modal-foot">
+        <button class="btn danger hidden" id="deleteBtn">🗑 刪除</button>
+        <span class="spacer"></span>
+        <button class="btn ghost" id="cancelBtn">取消</button>
+        <button class="btn primary" id="saveBtn">儲存</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 詳情查看模態 -->
+  <div class="modal-mask hidden" id="viewModal">
+    <div class="modal view-modal" role="dialog" aria-modal="true">
+      <div class="modal-head">
+        <h2 id="vTitle"></h2>
+        <button class="btn icon" id="viewClose">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="view-meta">
+          <span id="vSource"></span>
+          <span id="vTime"></span>
+        </div>
+        <div class="view-body" id="vBody"></div>
+        <div class="view-tags" id="vTags"></div>
+      </div>
+      <div class="modal-foot">
+        <span class="spacer"></span>
+        <button class="btn ghost" id="viewClose2">關閉</button>
+        <button class="btn primary" id="viewEdit">✏ 編輯</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 刪除確認模態 -->
+  <div class="modal-mask hidden" id="confirmModal">
+    <div class="modal confirm-modal" role="alertdialog" aria-modal="true">
+      <div class="confirm-icon">⚠</div>
+      <h3>確認刪除？</h3>
+      <p id="confirmText">這張卡片將被永久移除，無法復原。</p>
+      <div class="modal-foot">
+        <span class="spacer"></span>
+        <button class="btn ghost" id="confirmCancel">取消</button>
+        <button class="btn danger" id="confirmOk">確認刪除</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 設定模態 -->
+  <div class="modal-mask hidden" id="settingsModal">
+    <div class="modal" role="dialog" aria-modal="true">
+      <div class="modal-head">
+        <h2>設定</h2>
+        <button class="btn icon" id="settingsClose">✕</button>
+      </div>
+      <div class="modal-body">
+        <label class="field">
+          <span class="field-label">滾動速度（未懸停） <b id="fastVal">50</b> px/s</span>
+          <input type="range" id="setFast" min="10" max="120" value="50" />
+        </label>
+        <label class="field">
+          <span class="field-label">行/列數 <b id="rowsVal">3</b></span>
+          <input type="range" id="setRows" min="2" max="5" value="3" />
+        </label>
+        <label class="field">
+          <span class="field-label">浮動幅度 <b id="ampVal">5</b> px</span>
+          <input type="range" id="setAmp" min="2" max="14" value="5" />
+        </label>
+        <label class="field">
+          <span class="field-label">浮動週期 <b id="durVal">5</b> s</span>
+          <input type="range" id="setDur" min="3" max="12" value="5" />
+        </label>
+
+        <div class="field">
+          <span class="field-label">全域預設配色</span>
+          <div class="bg-controls">
+            <label class="seg">
+              <input type="radio" name="gBgType" value="gradient" checked />
+              <span>漸層</span>
+            </label>
+            <label class="seg">
+              <input type="radio" name="gBgType" value="solid" />
+              <span>純色</span>
+            </label>
+          </div>
+          <div class="bg-pickers">
+            <label class="color-field"><span>顏色 1</span><input type="color" id="gC1" value="#181715" /></label>
+            <label class="color-field" id="gC2Wrap"><span>顏色 2</span><input type="color" id="gC2" value="#252320" /></label>
+            <label class="angle-field" id="gAngleWrap"><span>角度 <b id="gAngleVal">135</b>°</span><input type="range" id="gAngle" min="0" max="360" value="135" /></label>
+          </div>
+          <div class="preview-card" id="gBgPreview">全域預設預覽</div>
+        </div>
+      </div>
+      <div class="modal-foot">
+        <span class="spacer"></span>
+        <button class="btn ghost" id="settingsCancel">關閉</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast hidden" id="toast"></div>
+
+  <script src="script.js"></script>
+</body>
+</html>
